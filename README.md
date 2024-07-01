@@ -50,6 +50,50 @@ Il software Laser TEC PCI e' stato compilato con la versione del compilatore pre
     seguiti dal costruttore .
 
     Personalmente  ho ottenuto risultati ottimali ~2°C  a  120°C  
+
+    Il codice per chi volesse destreggiarsi e' nel file principale main 
+
+            //calcola temperatura °Celsius T1 T2
+        Vo = tc_map.find("PWR_COOL")->second.Temp ;                              ---< il valore letto dalla sonda NTC2 e' registrao qui 
+        //R2 = (4700 * 5.0 ) -(4700 * Vo) /Vo ;//R1 *( (5.0 / (float)Vo) )-1;   
+        logR2 = sqrt( pow( Vo , 1.3) );                                        --->formula correzione elettrotermica curva 
+        // T = (1.0 / (c1 + c2*logR2 + c3*logR2*logR2*logR2)/3 );
+        T = logR2; 
+        //T = (T * 9.0)/ 5.0 + 32.0; 
+        TCOOL = T ;//tc_map.find("PWR_COOL")->second.Temp ;
+
+    Poiche per determinare il valore corrispondente su asse x del  grafico riportato nel datasheets avremo il valore termico 
+    e su asse y cioe' il valore corretto della resistenza NTC 
+    Dovendo determinare il valore di y quindi cominciamo semplificare il calcolo  effettuando un calcolo inverso della funzione 
+    quindi la potenza di x^1.3 dovra' essere invertita di assi attraverso la funzione di radice quadrata 
+
+    quindi  sqrt( POW ( Volt_ADC , 1.3 ) ; Ribalta completamente gli assi x con y 
+    Da qui si dovra' calcolare il valore della resistenza attraverso formula del partitore di tensione tra R1 e R2 di cui 
+    R2 e' NTC R1 e' conosciuta per determinare la caduta di tensione di carico . 
+    Quindi da in cui dovremmo estrarre il valore di R2 ... 
+    Ho estratto la formula inversa per simlificare con CAT GPT ritengo che sia corretta 
+    R1 4700 ,  Vo  valore in decimali di AD_converter , 5.0 Vin 
+    
+    R2 = (4700 * 5.0 ) -(4700 * Vo) /Vo ;//R1 *( (5.0 / (float)Vo) )-1
+    
+    Questo calcolo che porta via diverse operazioni di lavoro puo essere semplificata semplicemente 
+    invertendo l'ordine di collegamento tra  R1 con R2  ( schema base di collegamento  sonda NTC a ADC GPIO ) senza amplificatore esterno . 
+
+              R1 NTC            R2 4700 ohm
+      (5V) ------/\/\/\----o ---/\/\/\--------- o (GND)
+                           |
+                           |
+                       ____|_____
+                        ADC GPIO
+
+
+    Come dire che il carico assorbito da R2 compensa o bilancia linearmente il carico della sonda NTC 
+
+    Cioe' se calcolando R2 trovo valore termico attraverso la formula  sqrt(R2^1.3)
+    inverendo R1 con R2 ottengo il varole termico direttamente dalla porta
+    digitale GPIO_ADC 
+    --> segue   sqrt(GPIO_ADC^1.3)
+    Valore Termico Sonda in °C
     
     
     
