@@ -93,9 +93,20 @@ Il software Laser TEC PCI e' stato compilato con la versione del compilatore pre
     digitale GPIO_ADC 
     --> segue   sqrt(GPIO_ADC^1.3)
     Valore Termico Sonda in °C!
-    
-                     Fromula x^1.3     
 
+
+    Nota di programmazione informatico 
+
+    Le variabili che contengono i dati assegrati ai 3 dispositivi gestiti da micro_ic 
+    sono contenute in una struttura struct e poiche' anticamente 
+    la versione base del programma funzionava per porta remota i dati erano incapsulati con 
+    logica di liste ordinate da interatore per sequenziare i dati ...  
+    cosi sono rimaste nella vesione display oled 160x24 LCD 
+    un po meno comode da gestire a causa della ripetizioni del menu 
+    avrei dovuto sostituire le mappe alle pagine dell'LCD mentre le strutture 
+    rimangono quelle assegrate dal suo puntatore base .  
+    Pigrizia lasio cosi'  
+  
 
 
     
