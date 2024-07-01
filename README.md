@@ -96,11 +96,6 @@ Il software Laser TEC PCI e' stato compilato con la versione del compilatore pre
     
                      Fromula x^1.3     
 
-![photo_5771367823489221289_y](https://github.com/binwavelab/ESP32-PROJECT/assets/32112692/64dba839-ceb5-4453-a11b-820c430ae270)
-
-                    formula sqrt(x^1.3) 
-
-![photo_5771367823489221290_y](https://github.com/binwavelab/ESP32-PROJECT/assets/32112692/47f462a8-4828-4f6e-9381-461aead253cf)
 
 
     
