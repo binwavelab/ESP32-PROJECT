@@ -128,7 +128,7 @@ int inc_d = 10 ;
 
 
 
-//Parametri globali sonde TC e PWM ;
+//Parametri calcolo e temporanea sonde TC e PWM ;
 struct data_temperature{
   int temp_fq;
   int temp_stc ;
