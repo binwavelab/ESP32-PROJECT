@@ -2,16 +2,17 @@
 /*
  * 
  * programma di gestione termica Laser TEC cloned by test
-    per microcontroller ESP32 woorm
+    per microcontroller ESP32 wroom
     adatto a dialogare con porta seriale usb da pc 
-    con il programma serial_esp32_test.cpp contenuto nella work_dir/c_usb_9.0 asus 
-    risponde ai comandi seguenti 
-    inc -> incrementa  inc_105  incrementa la temperatura di 10.5°Celsius 
-    dec -> decrementa  dec_10   decrementa la temperatura di -10 °celsius 
-    ret -> visualizza  lla temeratura raggiunta 
-    set -> set_921  imposta la temperatura a 92.1 °celsius 
+
+    Programma gestisce 3 controlli di potenza PWM oscillatori per diodo 
+    laser e 2 celle raffreddamento peltier 
+
+    2 sonde temeratura 
+
+    1 LCD oled 128x64 pixel 3 linee di script  
+    4 Pulsanti di cui 2 scorrimento pagine del menu , 2 pulsanti piu meno 
     
-    Imposta una frequenza PWM a pilotare scheda potenza per termocoppie di Peltier 
 
     arduino infoboard ESP 32_Woorom
     BN: Unknown board
@@ -22,57 +23,14 @@
     RIferimenti ADC porte 
 
     //ADC_6db 3.3 Volt 4.700 ohm 100kntc
+
+      arduino settings  hardware micro ESP32 Wroom for pre-compiling 
+      
+      921600 |  CPUfrq. 40MHZ |  FLASH FREQ 80MHZ | FLASHMODE DIO | ,FLASH SIZE 4MB 
+      PARTITION SCHEME Defalt 4MB / PSRAM ENABLE
   
-  /*                    display     r ohm       mvolt
-    26.5°C     --->   150 
-    30.0 °C           175            44K    0.266  4.75
-    50~52°C    --->   490 
-    71°C       --->   686
-    78°C       ---->  795
-    92°C    ------>  1103
-  /*
-   * 
-   ADC_11db: The input voltage of ADC will be attenuated,
-   extending the range of measurement to up to approx. 
-   2600 mV. (1V input = ADC reading of 1575).
-    analogSetPinAttenuation(pin, attenuation): sets the input attenuation for the specified pin. 
-                                                The default is ADC_11db. Attenuation values are the same from previous function.
-    adcAttachPin(pin): Attach a pin to ADC (also clears any other analog mode that could be on).
-                        Returns TRUE or FALSE result.
-    adcStart(pin), adcBusy(pin) and resultadcEnd(pin):
-                    starts an ADC convertion on attached pin’s bus.
-                    Check if conversion on the pin’s ADC bus is currently
-                    running (returns TRUE or FALSE). Get the result of the
-                    conversion: returns 16-bit integer
-    * 
 */
 
-  /*---> tim_clock ---- https://www.electronicwings.com/esp32/esp32-tim_clock-interrupts    */
-
-    /* impostazione tim_clock 
-      // Global Variable 
-      volatile int interruptCounter;  //for counting interrupt
-      int totalInterruptCounter;    //total interrupt counting
-      int LED_STATE=LOW;
-      hw_timer_t * tim_clock = NULL; 
-
-      portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-
-
-      void IRAM_ATTR timetic() {      //Defining Inerrupt function with IRAM_ATTR for faster access
-       portENTER_CRITICAL_ISR(&timerMux);
-       interruptCounter++;
-       
-      }*/
-
-      /*
-      // in setup
-      tim_clock = timerBegin(0, 80, true);            // tim_clock 0, prescalar: 80, UP counting
-      timerAttachInterrupt(tim_clock, &timetic, true);   // Attach interrupt
-      timerAlarmWrite(tim_clock, 1000000, true);     // Match value= 1000000 for 1 sec. delay.
-      timerAlarmEnable(tim_clock);      */
-      
-      //alimetatore pwm frquenza 11.765 Khz ( 25us minimo potenza pwm ) 
 
 
 #include <Arduino.h>
@@ -116,11 +74,11 @@ Button BUT_SEL_DW  = { 14,   0,     false };   //GPIO35     14      14
 
 
 //Set constant gpio for  PWM channel end  AD temperature 
-const int GP_PWMCH1 = 17;  // Diode_888
-const int GP_PWMCH2 = 4;  // Cool
+const int GP_PWMCH1 = 17;  // Diode_888 power PWM
+const int GP_PWMCH2 = 4;  // Cool PWM diode
 
-const int GP_PWMCH3 = 2;  // Diode 
-const int GP_PWMCH4 = 5;  // not used
+const int GP_PWMCH3 = 2;  // Cool  PWM x cristall YAG 
+const int GP_PWMCH4 = 5;  // AUX not used
 
 
 const int GP_ADCH1 = 36; //GPIO-ADC1_0ch   T1
@@ -138,7 +96,7 @@ hw_timer_t * tim_clock = NULL;
 
 
 //set ready probe interval timer 
-//to read ancd calculate temperature filter eand setting pwm 
+//to read and calculate temperature filter end setting pwm 
 
 void IRAM_ATTR timetic() {      //Defining Inerrupt function with IRAM_ATTR for faster access
 //portENTER_CRITICAL_ISR(&timerMux);
@@ -147,7 +105,7 @@ void IRAM_ATTR timetic() {      //Defining Inerrupt function with IRAM_ATTR for 
 }
 
 
-//select keybord touch pin and increments/decrement value 
+//select keybord touch  and increments/decrement value 
 void IRAM_ATTR isr(void* arg) {
     Button* s = static_cast<Button*>(arg); 
 
@@ -223,7 +181,7 @@ void setup()
  // attachInterrupt(BUT_SEL.PIN, isrc, RISING);
     
  
-  //imposta timer rivelatore costate campionamento valori termici 
+  //imposta timer  campionamento valori termici 
   
   tim_clock = timerBegin(0, 80, true);            // tim_clock 0, prescalar: 80, UP counting
   // Attach timetic function to our tim_clock.
@@ -242,18 +200,7 @@ void setup()
 void loop()
 {
     
-    
-  /* Read Analog Input from three ADC Inputs */
-  //struttura dedicata alla cella termica 
-  //redDutyCycle = analogRead(A0);
- // TC_FQBBO = analogRead(0);
- // TC_FQLBO = analogRead(0); 
-  /* Map ADC Output to maximum possible dutycycle */
-  /*redDutyCycle = map(redDutyCycle, 0, ADC_RESOLUTION, 0, RED_MAX_DUTY_CYCLE);*/
-  //TC_FQBBO = map(TC_FQBBO, 0, ADC_RESOLUTION, 0, TC1_MAX_DUTY_CYCLE);
-  //TC_FQLBO = map(TC_FQLBO, 0, ADC_RESOLUTION, 0, TC2_MAX_DUTY_CYCLE);
-  /* Set PWM Output of Channel with desired dutycycle */ 
-  //redDutyCycle = 1 ;
+
   
   TC_FQLBO = 100 ;
   TC_FQDIO = 100 ;
@@ -292,13 +239,11 @@ delay(500);
     int t = 0;
     int di = 0;
     int te = 0;
-    
-    //char buffer[10];
-    //itoa(analogRead(GP_ADCH1 ) ,buffer,10);
 
+//ciclo infinito 
     while(1){
 
-      //seleziona pagina Display Rolla a DX o SX
+      //seleziona le pagine sul Display scorre a DX o SX
       if(  digitalRead(BUT_SEL_UP.PIN) == HIGH ) {            
       
         display_page++;
@@ -339,7 +284,7 @@ delay(500);
           /*temp_pwmchan = TC1_PWMChannel ;
           ledcWrite( temp_pwmchan, di );*/
           break ;
-          
+          //PAGE 1
           case 1:// imposta in map temperatura termostato T1
             if(TC_selection){
                 tc_map.find("PWR_COOL")->second.S_temp += Touch_idx ;
@@ -351,6 +296,7 @@ delay(500);
             display.clear();
             delay(100);
           break ;
+          //PAGE 2
           case 2 : //imposta pwm peltier T1
             if(TC_selection){
                 tc_map.find("PWR_COOL")->second.Fq += Touch_idx ;
@@ -365,7 +311,7 @@ delay(500);
             ledcWrite( temp_pwmchan, t  ); //imposta frequenza del resistore 
             delay(50);  */    
             break ;
-            
+            //PAGE 3
             case 3 : //imposta in map temperatura termostato T2 
                 if(TC_selection){
                 tc_map.find("PWR_DIODE")->second.S_temp += Touch_idx ;
@@ -377,6 +323,7 @@ delay(500);
             delay(100);
                 
             break ;
+            //PAGE 4
             case 4 : //imposta pwm peltier T2
             if(TC_selection){
                 tc_map.find("PWR_DIODE")->second.Fq += Touch_idx ;
@@ -395,9 +342,7 @@ delay(500);
 
         }    
 
-      //settings hardware micro for temperature 
-      //921600 |  CPUfrq. 40MHZ |  FLASH FREQ 80MHZ | FLASHMODE DIO | ,FLASH SIZE 4MB 
-      //PARTITION SCHEME Defalt 4MB / PSRAM ENABLE
+      
       
     //differenza du tempo di  goni cilco loop programma in millisecondi  
     
@@ -413,8 +358,13 @@ delay(500);
         
         //calcola temperatura °Celsius T1 T2
         Vo = tc_map.find("PWR_COOL")->second.Temp ;
-        //R2 = (4700 * 5.0 ) -(4700 * Vo) /Vo ;//R1 *( (5.0 / (float)Vo) )-1;   
-        logR2 = sqrt( pow( Vo , 1.3) );
+        //formula : calcolo resistenza R2 partitore tensione R2 -> NTC 100k 
+        //Vo tensione di uscita , 5.0V Tensione di ingresso , 4700ohm R1 , NTC 100k a 30°C 44Kohm 
+        //R2 = (4700 * 5.0 ) -(4700 * Vo) / Vo ; //R1 *( (5.0 / (float)Vo) )-1;   
+        logR2 = sqrt( pow( Vo , 1.3) );      //detemino andamento della resistenza NTC Vs Temperatura  consultando il grafico 
+                                             //datasheets sonda NTC100k simile a x^1.3 
+                                             //capovolgo il grafico per determinare la temperatura moltiplicando formula
+                                             //con Radice quadrata 
         // T = (1.0 / (c1 + c2*logR2 + c3*logR2*logR2*logR2)/3 );
         T = logR2; 
         //T = (T * 9.0)/ 5.0 + 32.0; 
@@ -428,7 +378,7 @@ delay(500);
         TCDIODE = T ;
         Temp_probe_ready = false ;
         
-        //setting temperature
+        //setting temperature Macro 
         SET_INCTEMP( TCDIODE  , tc_map.find("PWR_DIODE")->second.S_temp   , inc_c ) ;
         SET_INCTEMP( TCOOL  , tc_map.find("PWR_COOL")->second.S_temp  , inc_d ) ;
 
@@ -469,7 +419,7 @@ delay(500);
      
       } 
 
-             
+             //Trasmissione  Seriale usb 
              USE_SERIAL.print( " dtr.delta_temp -> " );
              USE_SERIAL.println( dtr.delta_temp_tc      );
            
@@ -485,10 +435,7 @@ delay(500);
             USE_SERIAL.println();
             
             //legge variabile tempo 
-            
-             
-  
-
+        
     } //fine while 
 
 
@@ -496,12 +443,6 @@ delay(500);
 }//fine loop 
 
 
-void Temperature_settings(){
-    
-    
-    
-    
-}
 
 
 
