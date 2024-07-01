@@ -7,7 +7,7 @@ SSD1306Wire display(0x3c, SDA, SCL);   // ADDRESS, SDA, SCL  -  SDA and SCL usua
 OLEDDisplayUi ui ( &display );
 #define BL 10 
 
-
+//PAGE 1
 void Display_Diode(String pwm , String tem1 , String tem2 ){
 
       //display.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -17,10 +17,10 @@ void Display_Diode(String pwm , String tem1 , String tem2 ){
       display.clear();
       display.drawString(0 , 0 , text_tcxx );
       display.drawLogBuffer(0, 0);
-      display.display();
+      display.display();   
     
     }
-
+//PAGE 2 3
 void probe_cool_PWM(String ch , String temp , String tem , String pwm){
 
       //display.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -34,7 +34,7 @@ void probe_cool_PWM(String ch , String temp , String tem , String pwm){
 
     }
     
-    
+    //PAGE 4 5
     void probe_cool_TC(String ch , String temp , String tem , String pwm){
 
       //display.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -49,7 +49,7 @@ void probe_cool_PWM(String ch , String temp , String tem , String pwm){
     }
 
 
-
+      //aux
     void display_probe(String t1 , String t2 , String t3 ){
 
       String text_tcxx = "diod " + t1 + " \n "
