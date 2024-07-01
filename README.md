@@ -62,20 +62,19 @@ Il software Laser TEC PCI e' stato compilato con la versione del compilatore pre
         //T = (T * 9.0)/ 5.0 + 32.0; 
         TCOOL = T ;//tc_map.find("PWR_COOL")->second.Temp ;
 
-    Poiche per determinare il valore corrispondente su asse x del  grafico riportato nel datasheets avremo il valore termico 
-    e su asse y cioe' il valore corretto della resistenza NTC 
+    Poiche per leggere la temeratura dal  grafico riportato nel datasheets del cosruttore , rappresentato su asse delle x , 
+    e su asse y il valore corretto della resistenza NTC .
     Dovendo determinare il valore di y quindi cominciamo semplificare il calcolo  effettuando un calcolo inverso della funzione 
-    quindi la potenza di x^1.3 dovra' essere invertita di assi attraverso la funzione di radice quadrata 
-
+    quindi la potenza di x^1.3 . Applicando la radice quadrata si invertono gli assi della funzione .
+    Ovvero formulando  una formula F(X) 
     quindi  sqrt( POW ( Volt_ADC , 1.3 ) ; Ribalta completamente gli assi x con y 
-    Da qui si dovra' calcolare il valore della resistenza attraverso formula del partitore di tensione tra R1 e R2 di cui 
-    R2 e' NTC R1 e' conosciuta per determinare la caduta di tensione di carico . 
-    Quindi da in cui dovremmo estrarre il valore di R2 ... 
-    Ho estratto la formula inversa per simlificare con CAT GPT ritengo che sia corretta 
-    R1 4700 ,  Vo  valore in decimali di AD_converter , 5.0 Vin 
+    Da qui attraverso la formula del partitore di tensione tra R1 e R2 vado a cercare il valore di NTC R2
+    Quindi da in cui dovremmo estrarre il valore di R2 per determinare la Temperatura ..  
+    Ho ricavato la formula inversa del partitore di temsione , per semplificare , con CAT GPT , ritengo che sia corretta . 
     
-    R2 = (4700 * 5.0 ) -(4700 * Vo) /Vo ;//R1 *( (5.0 / (float)Vo) )-1
-    
+    R1 4700 ,  Vo  valore in decimali di AD_converter , 5.0 Vin
+    // formula base del partitore tensione  Vo = Vi * ( (R1 - R2 / R2 ) )
+    R2 = (4700 * 5.0 ) -(4700 * Vo) /Vo ;   
     Questo calcolo che porta via diverse operazioni di lavoro puo essere semplificata semplicemente 
     invertendo l'ordine di collegamento tra  R1 con R2  ( schema base di collegamento  sonda NTC a ADC GPIO ) senza amplificatore esterno . 
 
@@ -93,7 +92,14 @@ Il software Laser TEC PCI e' stato compilato con la versione del compilatore pre
     inverendo R1 con R2 ottengo il varole termico direttamente dalla porta
     digitale GPIO_ADC 
     --> segue   sqrt(GPIO_ADC^1.3)
-    Valore Termico Sonda in °C
+    Valore Termico Sonda in °C!
+    
+    Fromula x^1.3  formula sqrt(x^1.3) 
+    [photo_5771367823489221289_y](https://github.com/binwavelab/ESP32-PROJECT/assets/32112692/64dba839-ceb5-4453-a11b-820c430ae270)
+![photo_5771367823489221290_y](https://github.com/binwavelab/ESP32-PROJECT/assets/32112692/47f462a8-4828-4f6e-9381-461aead253cf)
+
+
+    
     
     
     
